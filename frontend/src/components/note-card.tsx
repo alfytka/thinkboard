@@ -2,8 +2,34 @@ import { Link } from "react-router";
 import type { Note } from "../types/note.types";
 import { PenSquareIcon, Trash2Icon } from "lucide-react";
 import { formatDate } from "../lib/utils";
+import api from "../lib/axios";
+import toast from "react-hot-toast";
 
-const NoteCard = ({ note }: { note: Note }) => {
+const NoteCard = ({
+  note,
+  setNotes,
+}: {
+  note: Note;
+  setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
+}) => {
+  const handleDelete = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    id: number
+  ) => {
+    e.preventDefault(); // get rid of the navigation behaviour
+
+    if (!window.confirm("Are you sure you want to delte this note?")) return;
+
+    try {
+      await api.delete(`/notes/${id}`);
+      setNotes((prev) => prev.filter((note) => note._id !== id.toString())); // get rid of the deleted one
+      toast.success("Note deleted successfully");
+    } catch (error) {
+      console.log("Error in handleDelete", error);
+      toast.error("Failed to delete note");
+    }
+  };
+
   return (
     <Link
       to={`/note/${note._id}`}
@@ -14,11 +40,14 @@ const NoteCard = ({ note }: { note: Note }) => {
         <p className="text-base-content/70 line-clamp-3">{note.content}</p>
         <div className="card-actions justify-between items-center mt-4">
           <span className="text-sm text-base-content/60">
-            {formatDate(new Date(note.createdAt))}
+            {formatDate(new Date(String(note.createdAt)))}
           </span>
           <div className="flex items-center gap-1">
             <PenSquareIcon className="size-4" />
-            <button className="btn btn-ghost btn-xs text-error">
+            <button
+              className="btn btn-ghost btn-xs text-error"
+              onClick={(e) => handleDelete(e, Number(note._id))}
+            >
               <Trash2Icon className="size-4" />
             </button>
           </div>
